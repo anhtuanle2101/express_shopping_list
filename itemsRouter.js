@@ -10,14 +10,15 @@ router.get('/', (req, res)=>{
     )
 })
 
-router.post('/items', (req, res, next)=>{
+router.post('/', (req, res, next)=>{
     try {
+        debugger;
         if (!req.body.name || !req.body.price){
             throw new ExpressError("name and price are required!", 402)
         }else{
-            items.push({name, price});
-            return res.json({
-                added:{name, price}
+            items.push({name: req.body.name, price: req.body.price});
+            return res.status(201).json({
+                added:{name: req.body.name, price:req.body.price}
             })
         }
     } catch (e) {
@@ -27,7 +28,7 @@ router.post('/items', (req, res, next)=>{
 
 router.get('/:name', (req, res, next)=>{
     try {
-        const foundItem = items.find(i=>i.name == req.body.name);
+        const foundItem = items.find(i=>i.name == req.params.name);
         if (!foundItem){
             throw new ExpressError("given name is not found", 404);
         }
@@ -41,8 +42,8 @@ router.get('/:name', (req, res, next)=>{
 
 router.patch('/:name', (req, res, next)=>{
     try {
-        const foundItemIndex = items.findIndex(i=>i.name == req.body.name);
-        if (foundItemIndex!==-1){
+        const foundItemIndex = items.findIndex(i=>i.name === req.params.name);
+        if (foundItemIndex==-1){
             throw new ExpressError("given name is not found", 404);
         }
         if (!req.body.name && !req.body.price){
@@ -50,7 +51,7 @@ router.patch('/:name', (req, res, next)=>{
         }
         items[foundItemIndex].name = req.body.name || items[foundItemIndex].name;
         items[foundItemIndex].price = req.body.price || items[foundItemIndex].price;
-        return res.json({
+        return res.status(200).json({
             updated: items[foundItemIndex]
         })
     } catch (e) {
@@ -60,11 +61,11 @@ router.patch('/:name', (req, res, next)=>{
 
 router.delete('/:name', (req, res, next)=>{
     try {
-        const foundItemIndex = items.findIndex(i=>i.name == req.body.name);
-        if (foundItemIndex!==-1){
+        const foundItemIndex = items.findIndex(i=>i.name === req.params.name);
+        if (foundItemIndex==-1){
             throw new ExpressError("given name is not found", 404);
         }
-        items.slice(foundItemIndex,1);
+        items.splice(foundItemIndex,1);
         return res.json({
             message:'Deleted'
         })

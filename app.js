@@ -15,10 +15,10 @@ app.use((req, res, next)=>{
 
 //generic errors handler
 app.use((err, req, res, next)=>{
-    let status = req.status || 500;
-    let msg = req.msg || "Just an error";
-
-    return res.json({
+    let status = err.status || 500;
+    let msg = err.msg || "Just an error";
+    
+    return res.status(status).json({
         error:{
             msg:msg,
             status:status
