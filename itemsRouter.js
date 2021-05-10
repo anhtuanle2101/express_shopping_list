@@ -2,7 +2,30 @@ const express = require('express');
 const ExpressError = require('./expressError');
 const router = new express.Router();
 
-const items = require('./fakeDb');
+let items = [];
+
+const fs = require('fs');
+fs.readFile('./database', 'utf8', (err, data)=>{
+    if (err){
+        console.log("Reading errors");
+        process.exit(1);
+    }
+    items = JSON.parse(data);
+    console.log(items);
+})
+
+function writeToFile(content){
+    fs.writeFile('./database',content,'utf8', (err)=>{
+        if (err){
+            console.log("Writing errors");
+            process.exit(1);
+        }
+        console.log("Wrote successfully!");
+        console.log(items);
+    })
+}
+
+global.items = items;
 
 router.get('/', (req, res)=>{
     return res.json(
@@ -17,6 +40,7 @@ router.post('/', (req, res, next)=>{
             throw new ExpressError("name and price are required!", 402)
         }else{
             items.push({name: req.body.name, price: req.body.price});
+            writeToFile(JSON.stringify(items));  
             return res.status(201).json({
                 added:{name: req.body.name, price:req.body.price}
             })
