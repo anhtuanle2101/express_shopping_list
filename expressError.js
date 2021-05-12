@@ -3,7 +3,6 @@ class ExpressError extends Error{
         super();
         this.msg = msg;
         this.status = status;
-
     }
 }
 

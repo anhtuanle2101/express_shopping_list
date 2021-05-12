@@ -2,34 +2,16 @@ const express = require('express');
 const ExpressError = require('./expressError');
 const router = new express.Router();
 
-let items = [];
+const File = require('./file');
+global.path = './database';
+global.file = new File(path);
 
-const fs = require('fs');
-fs.readFile('./database', 'utf8', (err, data)=>{
-    if (err){
-        console.log("Reading errors");
-        process.exit(1);
-    }
-    items = JSON.parse(data);
-    console.log(items);
-})
-
-function writeToFile(content){
-    fs.writeFile('./database',content,'utf8', (err)=>{
-        if (err){
-            console.log("Writing errors");
-            process.exit(1);
-        }
-        console.log("Wrote successfully!");
-        console.log(items);
-    })
-}
-
-global.items = items;
+file.readFromFile();
 
 router.get('/', (req, res)=>{
+    file.readFromFile();
     return res.json(
-        items
+        file.items
     )
 })
 
@@ -39,8 +21,9 @@ router.post('/', (req, res, next)=>{
         if (!req.body.name || !req.body.price){
             throw new ExpressError("name and price are required!", 402)
         }else{
-            items.push({name: req.body.name, price: req.body.price});
-            writeToFile(JSON.stringify(items));  
+            file.readFromFile();
+            file.items.push({name: req.body.name, price: req.body.price});
+            file.writeToFile();  
             return res.status(201).json({
                 added:{name: req.body.name, price:req.body.price}
             })
@@ -52,11 +35,12 @@ router.post('/', (req, res, next)=>{
 
 router.get('/:name', (req, res, next)=>{
     try {
-        const foundItem = items.find(i=>i.name == req.params.name);
+        file.readFromFile();
+        const foundItem = file.items.find(i=>i.name.toLowerCase() == req.params.name.toLowerCase());
         if (!foundItem){
             throw new ExpressError("given name is not found", 404);
         }
-        return res.json(
+        return res.status(200).json(
             foundItem
         )
     } catch (e) {
@@ -66,17 +50,19 @@ router.get('/:name', (req, res, next)=>{
 
 router.patch('/:name', (req, res, next)=>{
     try {
-        const foundItemIndex = items.findIndex(i=>i.name === req.params.name);
+        file.readFromFile();
+        const foundItemIndex = file.items.findIndex(i=>i.name.toLowerCase() === req.params.name.toLowerCase());
         if (foundItemIndex==-1){
             throw new ExpressError("given name is not found", 404);
         }
         if (!req.body.name && !req.body.price){
             throw new ExpressError("name and price are required in the body", 402);
         }
-        items[foundItemIndex].name = req.body.name || items[foundItemIndex].name;
-        items[foundItemIndex].price = req.body.price || items[foundItemIndex].price;
+        file.items[foundItemIndex].name = req.body.name || items[foundItemIndex].name;
+        file.items[foundItemIndex].price = req.body.price || items[foundItemIndex].price;
+        file.writeToFile(); 
         return res.status(200).json({
-            updated: items[foundItemIndex]
+            updated: file.items[foundItemIndex]
         })
     } catch (e) {
         next(e);
@@ -85,12 +71,14 @@ router.patch('/:name', (req, res, next)=>{
 
 router.delete('/:name', (req, res, next)=>{
     try {
-        const foundItemIndex = items.findIndex(i=>i.name === req.params.name);
+        file.readFromFile();
+        const foundItemIndex = file.items.findIndex(i=>i.name.toLowerCase() === req.params.name.toLowerCase());
         if (foundItemIndex==-1){
             throw new ExpressError("given name is not found", 404);
         }
-        items.splice(foundItemIndex,1);
-        return res.json({
+        file.items.splice(foundItemIndex,1);
+        file.writeToFile(); 
+        return res.status(200).json({
             message:'Deleted'
         })
     } catch (e) {
